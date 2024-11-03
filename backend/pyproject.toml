@@ -9,6 +9,8 @@ dependencies = [
     "pydantic>=2.9.2",
     "pydantic-settings>=2.6.0",
     "supabase>=2.9.1",
+    "fastapi>=0.115.4",
+    "uvicorn>=0.32.0",
 ]
 requires-python = "==3.11.*"
 readme = "README.md"
@@ -19,4 +21,4 @@ license = {text = "MIT"}
 distribution = false
 
 [tool.pdm.scripts]
-start = "python -m src.main"
+start = "uvicorn src.main:app --reload"
