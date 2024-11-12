@@ -14,7 +14,7 @@ export default function Home() {
 
       <section className="flex flex-col items-center gap-4 mb-8">
         <Image
-          src="/frontend/public/logo.png" // replace w/ Spark logo
+          src="/logo.png" // replace w/ Spark logo
           alt="SparkBytes!" // replace
           width={150}
           height={150}
