@@ -1,23 +1,30 @@
-'use client'; 
+'use client';
 
-import React, { useEffect } from 'react';
+import { useContext, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { AuthContext } from './api/auth';
 
 const withAuth = (WrappedComponent: React.ComponentType) => {
-  const Wrapper: React.FC = (props) => {
+  return (props: any) => {
+    const { user, loading } = useContext(AuthContext);
     const router = useRouter();
 
     useEffect(() => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.replace('/login_student');
+      if (!loading && !user) {
+        router.push('/login_student');
       }
-    }, []);
+    }, [user, loading, router]);
+
+    if (loading) {
+      return <p>Loading...</p>;
+    }
+
+    if (!user) {
+      return null; // Return null or a fallback UI while redirecting
+    }
 
     return <WrappedComponent {...props} />;
   };
-
-  return Wrapper;
 };
 
 export default withAuth;

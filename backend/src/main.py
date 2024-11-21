@@ -1,24 +1,102 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Depends, HTTPException, status
+from fastapi.responses import RedirectResponse
+from authlib.integrations.starlette_client import OAuth
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
+from starlette.config import Config
 from fastapi.middleware.cors import CORSMiddleware
-from src.auth import auth_router
+from starlette.middleware.sessions import SessionMiddleware
+
+from .utils.settings import SETTINGS
 
 app = FastAPI()
 
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+ALGORITHM = 'HS256'
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+config = Config(environ={
+    'GOOGLE_CLIENT_ID': SETTINGS.google_client_id,
+    'GOOGLE_CLIENT_SECRET': SETTINGS.google_client_secret,
+})
+oauth = OAuth(config)
+
+oauth.register(
+    name='google',
+    client_id=SETTINGS.google_client_id,
+    client_secret=SETTINGS.google_client_secret,
+    access_token_url='https://oauth2.googleapis.com/token',
+    authorize_url='https://accounts.google.com/o/oauth2/v2/auth',
+    api_base_url='https://openidconnect.googleapis.com/v1/',
+    client_kwargs={
+        'scope': 'openid email profile',
+    },
 )
 
-app.include_router(auth_router)
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
+    to_encode.update({'exp': expire})
+    return jwt.encode(to_encode, SETTINGS.google_secret_key, algorithm=ALGORITHM)
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+def get_current_user(request: Request):
+    token = request.cookies.get('access_token')
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Not authenticated',
+        )
+    try:
+        payload = jwt.decode(token, SETTINGS.google_secret_key, algorithms=[ALGORITHM])
+        email = payload.get('sub')
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Could not validate credentials',
+            )
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Could not validate credentials',
+        )
+    return email
+
+@app.get('/login')
+async def login(request: Request):
+    redirect_uri = request.url_for('auth_callback')
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+@app.get('/auth/callback')
+async def auth_callback(request: Request):
+    token = await oauth.google.authorize_access_token(request)
+    user_info = await oauth.google.parse_id_token(request, token)
+    email = user_info['email']
+
+    access_token = create_access_token(data={'sub': email})
+    response = RedirectResponse(url='http://localhost:3000/')
+    response.set_cookie(
+        key='access_token',
+        value=access_token,
+        httponly=True,
+        samesite='lax',
+        secure=False,  # Set to True in production
+    )
+    return response
+
+@app.get('/protected')
+async def protected_route(current_user: str = Depends(get_current_user)):
+    return {'message': f'Hello, {current_user}'}
+
+# Add CORS middleware to allow requests from your frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['http://localhost:3000'],
+    allow_credentials=True,  # Important to allow cookies
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
+
+# Add Session middleware
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=SETTINGS.google_secret_key,
+)
