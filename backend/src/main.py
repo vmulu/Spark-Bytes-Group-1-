@@ -69,7 +69,7 @@ async def login(request: Request):
 @app.get('/auth/callback')
 async def auth_callback(request: Request):
     token = await oauth.google.authorize_access_token(request)
-    user_info = await oauth.google.parse_id_token(request, token)
+    user_info = await oauth.google.userinfo(token=token)
     email = user_info['email']
 
     access_token = create_access_token(data={'sub': email})
