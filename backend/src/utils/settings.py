@@ -14,8 +14,7 @@ class Settings(BaseSettings):
     #env: Literal["production", "staging", "development"]
 
     # Database
-    #supabase_url: str
-    #supabase_key: str
+    database_name: str
 
     # Google Auth
     google_client_id: str

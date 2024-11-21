@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
@@ -6,11 +8,35 @@ from datetime import datetime, timedelta
 from starlette.config import Config
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+from sqlmodel import SQLModel
+from .db.session import engine, get_session
+from .db.sqlite_manager import SQLiteManager
+from .models.user import User
+from .routers.database_endpoints_generator import DatabaseEndpointGenerator
 
 from .utils.settings import SETTINGS
 from fastapi.responses import JSONResponse
 
 app = FastAPI()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Handles the creation and destruction of the application
+    """
+    try:
+        SQLModel.metadata.create_all(engine)
+        yield app
+    finally:
+        pass
+
+
+# Add routers
+generator = DatabaseEndpointGenerator()
+generator.register_table(SQLiteManager(get_session(), model=User))
+app.include_router(generator.router)
+
 
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
