@@ -30,6 +30,7 @@ oauth.register(
     client_kwargs={
         'scope': 'openid email profile',
     },
+    server_metadata_url= 'https://accounts.google.com/.well-known/openid-configuration'
 )
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
