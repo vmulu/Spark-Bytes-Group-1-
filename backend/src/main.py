@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from .utils.settings import SETTINGS
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
@@ -86,6 +87,17 @@ async def auth_callback(request: Request):
 @app.get('/protected')
 async def protected_route(current_user: str = Depends(get_current_user)):
     return {'message': f'Hello, {current_user}'}
+
+@app.get('/logout')
+async def logout():
+    response = JSONResponse({'message': 'Logged out'})
+    response.delete_cookie(
+        key='access_token',
+        httponly=True,
+        samesite='lax',
+        secure=False,  # Set to True in production
+    )
+    return response
 
 # Add CORS middleware to allow requests from your frontend
 app.add_middleware(
