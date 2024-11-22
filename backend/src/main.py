@@ -42,7 +42,7 @@ app = FastAPI(lifespan=lifespan)
 
 # Add routers
 generator = DatabaseEndpointGenerator()
-generator.register_table(SQLiteManager(get_session(), model=User))
+generator.register_table(SQLiteManager(get_session, model=User))
 app.include_router(generator.router)
 
 

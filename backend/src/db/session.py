@@ -14,11 +14,5 @@ AsyncSessionLocal = sessionmaker(
 )
 
 
-async def get_session():
-    """
-    Access the database session
-
-    :return: a database session
-    """
-    async with AsyncSession(engine) as session:
-        yield session
+def get_session() -> AsyncSession:
+    return AsyncSessionLocal()

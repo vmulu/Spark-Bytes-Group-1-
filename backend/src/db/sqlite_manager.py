@@ -12,8 +12,8 @@ from ..models.error_models import ErrorDetail
 T = TypeVar("T", bound=SparkBytesModel)
 
 class SQLiteManager(AbstractDatabaseManager[T]):
-    def __init__(self, session: AsyncGenerator[AsyncSession, Any], model: Type[T]):
-        self._session = session
+    def __init__(self, session_factory: callable, model: Type[T]):
+        self._session_factory = session_factory
         self.model = model
 
     @property
@@ -25,10 +25,7 @@ class SQLiteManager(AbstractDatabaseManager[T]):
         return self.model
 
     async def session(self) -> AsyncSession:
-        async for session in self._session:
-            if session is None:
-                raise RuntimeError("Session generator did not yield a valid session.")
-            return session
+        return self._session_factory()
 
     async def create(self, items: List[T]) -> List[T]:
         session = await self.session()
