@@ -67,7 +67,9 @@ class SQLiteManager(AbstractDatabaseManager[T]):
         return db_item
 
     async def list(self, list_request: ListRequest) -> List[T]:
-        query = select(self.model).where(self.model.user_id == list_request.user_id)
+        query = select(self.model)
+        if list_request.user_id:
+            query = query.where(self.model.user_id == list_request.user_id)
 
         # Apply ordering
         order_column = getattr(self.model, list_request.order_by)

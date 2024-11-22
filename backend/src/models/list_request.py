@@ -3,8 +3,8 @@ from typing import Annotated, Literal, Optional
 
 
 class ListRequest(BaseModel):
-    user_id: Annotated[str, Field(
-        ...,
+    user_id: Annotated[Optional[str], Field(
+        None,
         description="The unique identifier for the user that this data belongs to",
         examples=["AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"]
     )]
