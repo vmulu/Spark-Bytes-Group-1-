@@ -1,4 +1,4 @@
-from typing import TypeVar, Type, List
+from typing import TypeVar, Type, List, AsyncGenerator, Any
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
@@ -12,8 +12,8 @@ from ..models.error_models import ErrorDetail
 T = TypeVar("T", bound=SparkBytesModel)
 
 class SQLiteManager(AbstractDatabaseManager[T]):
-    def __init__(self, session: AsyncSession, model: Type[T]):
-        self.session = session
+    def __init__(self, session: AsyncGenerator[AsyncSession, Any], model: Type[T]):
+        self._session = session
         self.model = model
 
     @property
@@ -24,15 +24,21 @@ class SQLiteManager(AbstractDatabaseManager[T]):
     def model_type(self) -> Type[T]:
         return self.model
 
+    async def session(self) -> AsyncSession:
+        async for session in self._session:
+            return session
+
     async def create(self, items: List[T]) -> List[T]:
-        self.session.add_all(items)
-        await self.session.commit()
+        session = await self.session()
+        session.add_all(items)
+        await session.commit()
         for item in items:
-            await self.session.refresh(item)
+            await session.refresh(item)
         return items
 
     async def put(self, id: str, item: T) -> T:
-        db_item = await self.session.get(self.model, id)
+        session = await self.session()
+        db_item = session.get(self.model, id)
         if not db_item:
             raise HTTPException(
                 status_code=404,
@@ -41,13 +47,14 @@ class SQLiteManager(AbstractDatabaseManager[T]):
                 ).model_dump()
             )
         item.id = id  # Ensure the item has the correct ID
-        self.session.add(item)
-        await self.session.commit()
-        await self.session.refresh(item)
+        session.add(item)
+        await session.commit()
+        await session.refresh(item)
         return item
 
     async def get(self, id: str) -> T:
-        db_item = await self.session.get(self.model, id)
+        session = await self.session()
+        db_item = await session.get(self.model, id)
         if not db_item:
             raise HTTPException(
                 status_code=404,
@@ -68,8 +75,9 @@ class SQLiteManager(AbstractDatabaseManager[T]):
             query = query.order_by(order_column.desc())
 
         # Apply pagination
+        session = await self.session()
         if list_request.after_id:
-            after_item = await self.session.get(self.model, list_request.after_id)
+            after_item = await session.get(self.model, list_request.after_id)
             if after_item:
                 query = query.where(order_column > getattr(after_item, list_request.order_by))
             else:
@@ -80,7 +88,7 @@ class SQLiteManager(AbstractDatabaseManager[T]):
                     ).model_dump()
                 )
         if list_request.before_id:
-            before_item = await self.session.get(self.model, list_request.before_id)
+            before_item = await session.get(self.model, list_request.before_id)
             if before_item:
                 query = query.where(order_column < getattr(before_item, list_request.order_by))
             else:
@@ -92,12 +100,13 @@ class SQLiteManager(AbstractDatabaseManager[T]):
                 )
 
         query = query.limit(list_request.limit)
-        result = await self.session.execute(query)
+        result = await session.execute(query)
         items = result.scalars().all()
         return list(items)
 
     async def delete(self, id: str) -> T:
-        db_item = await self.session.get(self.model, id)
+        session = await self.session()
+        db_item = await session.get(self.model, id)
         if not db_item:
             raise HTTPException(
                 status_code=404,
@@ -105,6 +114,6 @@ class SQLiteManager(AbstractDatabaseManager[T]):
                     message=f"Item '{id}' not found in table '{self.name}'",
                 ).model_dump()
             )
-        await self.session.delete(db_item)
-        await self.session.commit()
+        await session.delete(db_item)
+        await session.commit()
         return db_item

@@ -14,7 +14,7 @@ class SparkBytesModel(SQLModel):
     """
     Base class for all SQL objects
     """
-    user_id: Annotated[UUID, Field(
+    user_id: Annotated[str, Field(
         ...,
         description="The unique identifier for the user that this data belongs to",
         index=True,

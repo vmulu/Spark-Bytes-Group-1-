@@ -1,3 +1,4 @@
+import logging
 from typing import List, TypeVar
 
 from fastapi import APIRouter, HTTPException
@@ -5,6 +6,8 @@ from fastapi import APIRouter, HTTPException
 from ..db.abstract_manager import AbstractDatabaseManager
 from ..models.list_request import ListRequest
 
+
+logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
@@ -41,7 +44,7 @@ class DatabaseEndpointGenerator:
                 except HTTPException as e:
                     raise e
                 except Exception as e:
-                    print(e)
+                    logger.exception(e)
                     raise HTTPException(
                         status_code=500,
                         detail=f"Internal server error: {str(e)}",
@@ -61,7 +64,7 @@ class DatabaseEndpointGenerator:
                 except HTTPException as e:
                     raise e
                 except Exception as e:
-                    print(e)
+                    logger.exception(e)
                     raise HTTPException(
                         status_code=500,
                         detail=f"Internal server error: {str(e)}",
@@ -80,7 +83,7 @@ class DatabaseEndpointGenerator:
                 except HTTPException as e:
                     raise e
                 except Exception as e:
-                    print(e)
+                    logger.exception(e)
                     raise HTTPException(
                         status_code=500,
                         detail=f"Internal server error: {str(e)}",
@@ -99,7 +102,7 @@ class DatabaseEndpointGenerator:
                 except HTTPException as e:
                     raise e
                 except Exception as e:
-                    print(e)
+                    logger.exception(e)
                     raise HTTPException(
                         status_code=500,
                         detail=f"Internal server error: {str(e)}",
@@ -118,7 +121,7 @@ class DatabaseEndpointGenerator:
                 except HTTPException as e:
                     raise e
                 except Exception as e:
-                    print(e)
+                    logger.exception(e)
                     raise HTTPException(
                         status_code=500,
                         detail=f"Internal server error: {str(e)}",

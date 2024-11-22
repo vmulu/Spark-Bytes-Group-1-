@@ -13,9 +13,6 @@ class Settings(BaseSettings):
     # Settings
     #env: Literal["production", "staging", "development"]
 
-    # Database
-    database_name: str
-
     # Google Auth
     google_client_id: str
     google_client_secret: str
