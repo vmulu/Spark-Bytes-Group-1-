@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Depends, HTTPException, status
@@ -17,7 +18,8 @@ from .routers.database_endpoints_generator import DatabaseEndpointGenerator
 from .utils.settings import SETTINGS
 from fastapi.responses import JSONResponse
 
-app = FastAPI()
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -25,12 +27,18 @@ async def lifespan(app: FastAPI):
     """
     Handles the creation and destruction of the application
     """
+    logger.info("Creating application")
     try:
-        SQLModel.metadata.create_all(engine)
-        yield app
+        # import models so the table gets created
+        from .models.user import User
+        async with engine.begin() as conn:
+            await conn.run_sync(SQLModel.metadata.create_all)
+        yield
     finally:
         pass
 
+
+app = FastAPI(lifespan=lifespan)
 
 # Add routers
 generator = DatabaseEndpointGenerator()

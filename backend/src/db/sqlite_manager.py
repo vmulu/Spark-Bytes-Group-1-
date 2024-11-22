@@ -26,6 +26,8 @@ class SQLiteManager(AbstractDatabaseManager[T]):
 
     async def session(self) -> AsyncSession:
         async for session in self._session:
+            if session is None:
+                raise RuntimeError("Session generator did not yield a valid session.")
             return session
 
     async def create(self, items: List[T]) -> List[T]:
@@ -38,7 +40,7 @@ class SQLiteManager(AbstractDatabaseManager[T]):
 
     async def put(self, id: str, item: T) -> T:
         session = await self.session()
-        db_item = session.get(self.model, id)
+        db_item = await session.get(self.model, id)
         if not db_item:
             raise HTTPException(
                 status_code=404,

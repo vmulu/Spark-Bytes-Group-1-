@@ -20,7 +20,7 @@ class SparkBytesModel(SQLModel):
         index=True,
     )]
     id: Annotated[str, Field(
-        default_factory=uuid.uuid4,
+        default_factory=lambda: str(uuid.uuid4()),
         description="The unique identifier for this item of data",
         index=True,
         primary_key=True,

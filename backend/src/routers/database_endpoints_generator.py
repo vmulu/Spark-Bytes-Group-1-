@@ -34,7 +34,7 @@ class DatabaseEndpointGenerator:
         if "post" in enabled_methods:
             @self.router.post(
                 f"/database/{handler.name}",
-                response_model=handler.model_type,
+                response_model=List[handler.model_type],
                 summary=f"Create and save new {handler.name}",
                 tags=["datastream"],
             )

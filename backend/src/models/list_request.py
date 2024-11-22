@@ -1,10 +1,9 @@
 from pydantic import BaseModel, Field
 from typing import Annotated, Literal, Optional
-from uuid import UUID
 
 
 class ListRequest(BaseModel):
-    user_id: Annotated[UUID, Field(
+    user_id: Annotated[str, Field(
         ...,
         description="The unique identifier for the user that this data belongs to",
         examples=["AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"]
