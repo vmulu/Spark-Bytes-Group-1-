@@ -15,6 +15,9 @@ dependencies = [
     "starlette>=0.41.3",
     "itsdangerous>=2.2.0",
     "python-jose>=3.3.0",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "sqlmodel>=0.0.22",
+    "aiosqlite>=0.20.0",
 ]
 requires-python = "==3.11.*"
 readme = "README.md"
