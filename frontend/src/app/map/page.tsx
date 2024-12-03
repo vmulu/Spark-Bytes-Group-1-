@@ -8,27 +8,43 @@ const MapPage = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
-  const userPreferences = { vegan: true, halal: false, vegetarian: true, glutenFree: false }; // Example user preferences
+  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   useEffect(() => {
-    // Fetch events data
-    async function fetchEvents() {
-      const events = await getEvents();
-      setEvents(events);
-      initMap(events);
-    }
+    const loadGoogleMapsScript = (): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        if (typeof window.google !== 'undefined' && window.google.maps) {
+          resolve(); // Script already loaded
+          return;
+        }
 
-    // Initialize Google Map
-    function initMap(events: Event[]) {
-      if (!mapRef.current) return;
+        const existingScript = document.getElementById('googleMapsScript');
+
+        if (existingScript) {
+          existingScript.addEventListener('load', () => resolve());
+          existingScript.addEventListener('error', () => reject(new Error('Failed to load Google Maps script')));
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.id = 'googleMapsScript';
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}`;
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load Google Maps script'));
+        document.head.appendChild(script);
+      });
+    };
+
+    const initMap = (eventsData: Event[]) => {
+      if (!mapRef.current || typeof google === 'undefined') return;
 
       const map = new google.maps.Map(mapRef.current, {
-        center: { lat: 42.3505, lng: -71.1054 }, // Boston University coordinates
+        center: { lat: 42.3505, lng: -71.1054 },
         zoom: 15,
       });
 
-      // Add markers for each event
-      events.forEach((event) => {
+      eventsData.forEach((event) => {
         const marker = new google.maps.Marker({
           position: { lat: event.latitude, lng: event.longitude },
           map,
@@ -44,21 +60,29 @@ const MapPage = () => {
           setSelectedEvent(event);
         });
       });
+    };
+
+    async function fetchEventsAndInitMap() {
+      try {
+        const eventsData = await getEvents();
+        setEvents(eventsData);
+
+        await loadGoogleMapsScript();
+        initMap(eventsData);
+      } catch (error) {
+        console.error('Error loading Google Maps or fetching events:', error);
+      }
     }
 
-    fetchEvents();
+    fetchEventsAndInitMap();
   }, []);
 
-  const handleCloseModal = () => {
-    setSelectedEvent(null);
-  };
+  const handleCloseModal = () => setSelectedEvent(null);
 
   return (
     <div>
-      {/* Map Section */}
       <div ref={mapRef} className="w-full h-96 md:h-[400px] bg-gray-200" />
 
-      {/* Event List Section */}
       <div className="container mx-auto px-4 py-8">
         <h3 className="text-2xl font-bold mb-6">Available Food Events</h3>
         <ul className="space-y-4">
@@ -74,14 +98,14 @@ const MapPage = () => {
                 Location: {event.location}
               </p>
               <p className="text-sm text-gray-500">
-                Time: {new Date(event.startTime).toLocaleString()}
+                Time: {new Date(event.start_time).toLocaleString()} -{' '}
+                {new Date(event.end_time).toLocaleString()}
               </p>
             </li>
           ))}
         </ul>
       </div>
 
-      {/* Event Modal */}
       {selectedEvent && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
@@ -103,19 +127,9 @@ const MapPage = () => {
               Location: {selectedEvent.location}
             </p>
             <p className="text-sm text-gray-600">
-              Time: {new Date(selectedEvent.startTime).toLocaleString()}
+              Time: {new Date(selectedEvent.start_time).toLocaleString()} -{' '}
+              {new Date(selectedEvent.end_time).toLocaleString()}
             </p>
-            <h4 className="text-lg font-semibold mt-4">Matches Your Preferences:</h4>
-            <ul className="list-disc list-inside text-sm text-gray-600">
-              {Object.entries(userPreferences).map(([preference, isPreferred]) => (
-                <li
-                  key={preference}
-                  className={selectedEvent[preference as keyof Event] ? 'text-green-600' : 'text-red-600'}
-                >
-                  {preference.charAt(0).toUpperCase() + preference.slice(1)}: {isPreferred ? 'Yes' : 'No'}
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
       )}

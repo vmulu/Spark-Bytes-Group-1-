@@ -1,41 +1,44 @@
 export interface Event {
   id: string;
+  user_id: string;
+  created_at: number;
   name: string;
   description: string;
   location: string;
   latitude: number;
   longitude: number;
-  startTime: string; // ISO date string
-  endTime: string; // ISO date string
-  preferences: {
-    vegan: boolean;
-    halal: boolean;
-    vegetarian: boolean;
-    glutenFree: boolean;
-    // Add more preferences as needed
-  };
+  start_time: string; // ISO date string
+  end_time: string;   // ISO date string
+  is_vegan: boolean;
+  is_halal: boolean;
+  is_vegetarian: boolean;
+  is_gluten_free: boolean;
 }
 
+
 export async function getEvents(): Promise<Event[]> {
-  // TODO: Implement API call to fetch events
-  // For now, return sample data
-  return [
-    {
-      id: '1',
-      name: 'Leftover Pizza from CS Event',
-      description: 'Free pizza available in the lobby.',
-      location: '123 Main St',
-      latitude: 42.3505,
-      longitude: -71.1054,
-      startTime: new Date().toISOString(),
-      endTime: new Date().toISOString(),
-      preferences: {
-        vegan: false,
-        halal: false,
-        vegetarian: true,
-        glutenFree: false,
+  try {
+    const response = await fetch('http://localhost:8000/database/events/list', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    },
-    // Add more sample events
-  ];
+      body: JSON.stringify({
+        limit: 100,
+        order: 'desc',
+        order_by: 'created_at',
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error fetching events: ${response.statusText}`);
+    }
+
+    const events: Event[] = await response.json();
+    return events;
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
 }
+
