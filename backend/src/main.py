@@ -12,6 +12,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from sqlmodel import SQLModel
 from .db.session import engine, get_session
 from .db.sqlite_manager import SQLiteManager
+from .models.event import Event
 from .models.user import User
 from .routers.database_endpoints_generator import DatabaseEndpointGenerator
 
@@ -31,6 +32,7 @@ async def lifespan(app: FastAPI):
     try:
         # import models so the table gets created
         from .models.user import User
+        from .models.event import Event
         async with engine.begin() as conn:
             await conn.run_sync(SQLModel.metadata.create_all)
         yield
@@ -43,6 +45,7 @@ app = FastAPI(lifespan=lifespan)
 # Add routers
 generator = DatabaseEndpointGenerator()
 generator.register_table(SQLiteManager(get_session, model=User))
+generator.register_table(SQLiteManager(get_session, model=Event))
 app.include_router(generator.router)
 
 
