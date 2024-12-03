@@ -9,7 +9,6 @@ interface Preferences {
   halal: boolean;
   vegetarian: boolean;
   glutenFree: boolean;
-  // Add more preferences as needed
 }
 
 const ProfilePage = () => {
@@ -21,11 +20,11 @@ const ProfilePage = () => {
     glutenFree: false,
   });
 
-  const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setPreferences({
-      ...preferences,
-      [event.target.name]: event.target.checked,
-    });
+  const handlePreferenceToggle = (preference: keyof Preferences) => {
+    setPreferences((prevPreferences) => ({
+      ...prevPreferences,
+      [preference]: !prevPreferences[preference],
+    }));
   };
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -40,52 +39,25 @@ const ProfilePage = () => {
       <p className="mb-4">Hello, {user}!</p>
       <form onSubmit={handleSubmit}>
         <h3 className="text-xl font-semibold mb-4">Food Preferences</h3>
-        <div className="space-y-3">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="vegan"
-              checked={preferences.vegan}
-              onChange={handleCheckboxChange}
-              className="mr-2"
-            />
-            Vegan
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="vegetarian"
-              checked={preferences.vegetarian}
-              onChange={handleCheckboxChange}
-              className="mr-2"
-            />
-            Vegetarian
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="halal"
-              checked={preferences.halal}
-              onChange={handleCheckboxChange}
-              className="mr-2"
-            />
-            Halal
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="glutenFree"
-              checked={preferences.glutenFree}
-              onChange={handleCheckboxChange}
-              className="mr-2"
-            />
-            Gluten-Free
-          </label>
-          {/* Add more preference options as needed */}
+        <div className="grid grid-cols-2 gap-4">
+          {Object.entries(preferences).map(([key, value]) => (
+            <button
+              key={key}
+              type="button"
+              className={`p-4 rounded-lg text-center font-medium transition-transform duration-200 ease-in-out ${
+                value
+                  ? 'bg-blue-600 text-white shadow-lg transform scale-105'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              onClick={() => handlePreferenceToggle(key as keyof Preferences)}
+            >
+              {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
+            </button>
+          ))}
         </div>
         <button
           type="submit"
-          className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+          className="mt-6 w-full px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
         >
           Save Preferences
         </button>
