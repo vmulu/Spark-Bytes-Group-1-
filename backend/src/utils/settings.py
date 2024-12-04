@@ -10,9 +10,6 @@ load_dotenv(override=True)
 class Settings(BaseSettings):
     """.env configs and settings."""
 
-    # Settings
-    #env: Literal["production", "staging", "development"]
-
     # Google Auth
     google_client_id: str
     google_client_secret: str
@@ -28,5 +25,4 @@ class Settings(BaseSettings):
         case_sensitive = False
 
 
-# Singleton instance of Settings that can be imported anywhere
 SETTINGS = Settings()
