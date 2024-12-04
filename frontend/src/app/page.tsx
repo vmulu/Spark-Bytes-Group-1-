@@ -36,7 +36,7 @@ export default function Home() {
           <div className="text-center">
             <Link
               href="/login_student"
-              className="inline-block px-10 py-4 bg-green-600 text-white rounded-lg text-lg hover:bg-green-700 transition"
+              className="inline-block px-10 py-4 bg-[#088F8F] text-white rounded-lg text-lg hover:bg-[#088F8F]  transition"
             >
               Sign In to Get Started
             </Link>
@@ -47,14 +47,14 @@ export default function Home() {
             {/* Find Food on Campus Button */}
             <Link
               href="/map"
-              className="inline-block px-10 py-4 bg-blue-600 text-white rounded-lg text-lg hover:bg-blue-700 transition"
+              className="inline-block px-10 py-4 bg-[#088F8F] text-white rounded-lg text-lg hover:bg-[#066D6D] transition"
             >
               Find Food on Campus
             </Link>
             {/* Create an Event Button */}
             <Link
               href="/profile"
-              className="inline-block px-10 py-4 bg-blue-600 text-white rounded-lg text-lg hover:bg-blue-700 transition"
+              className="inline-block px-10 py-4 bg-[#088F8F] text-white rounded-lg text-lg hover:bg-[#066D6D] transition"
             >
               Create An Event
             </Link>
@@ -62,7 +62,7 @@ export default function Home() {
         </div>
         )}
         <section className="mt-16">
-          <h2 className="text-3xl font-semibold text-blue-600 mb-6">About the Project</h2>
+          <h2 className="text-3xl font-semibold text-bg-[#066D6D] mb-6">About the Project</h2>
           <p className="text-gray-700 leading-relaxed mb-6">
             SparkBytes is dedicated to connecting students with leftover food from campus events,
             reducing food waste, and helping students save money.
