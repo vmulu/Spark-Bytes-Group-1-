@@ -11,13 +11,13 @@ export default function Home() {
   return (
     <div>
       {/* Banner */}
-      <div className="relative">
+      <div className="flex items-center justify-center w-40 h-40 rounded-full shadow-lg overflow-hidden">
         <Image
-          src="/bu_banner.jpg"
+          src="/logo.png"
           alt="BU Campus Banner"
-          width={1920}
-          height={400}
-          className="w-full h-auto"
+          width={200}
+          height={200}
+          className="w-auto h-auto"
           priority
         />
       </div>
