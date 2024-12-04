@@ -4,7 +4,7 @@ import { useState, useContext, useEffect } from 'react';
 import withAuth from '../withAuth';
 import { AuthContext } from '../api/auth';
 import { User } from '../api/auth';
-import { Event, getEvents } from '../api/events';
+import { Event, getEvents, deleteEvent } from '../api/events';
 
 interface Preferences {
   is_vegan: boolean;
@@ -168,6 +168,19 @@ const ProfilePage = () => {
     }
   };
 
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      await deleteEvent(eventId);  // Call the deleteEvent API
+      // Update the state 
+      setEvents((prevEvents) => prevEvents.filter(event => event.id !== eventId));
+      alert('Event deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      alert('Failed to delete event.');
+    }
+  };
+
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedEvent(null);
@@ -289,6 +302,16 @@ const ProfilePage = () => {
                   Time: {new Date(event.start_time).toLocaleString()} -{' '}
                   {new Date(event.end_time).toLocaleString()}
                 </p>
+                {/*Delete Event*/}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation(); 
+                    handleDeleteEvent(event.id);
+                  }}
+                  className="mt-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
+                >
+                  Delete Event
+                </button>
               </li>
             ))}
           </ul>

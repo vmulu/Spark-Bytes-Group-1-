@@ -47,3 +47,21 @@ export async function getEvents(userId?: string): Promise<Event[]> {
     return [];
   }
 }
+
+export async function deleteEvent(eventId: string): Promise<void> {
+  try {
+    const response = await fetch(`http://localhost:8000/database/events/${eventId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error deleting event: ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('Failed to delete event:', error);
+    throw error;
+  }
+}
