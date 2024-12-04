@@ -1,8 +1,8 @@
-from typing import TypeVar, Type, List, Any
-
-from sqlmodel.ext.asyncio.session import AsyncSession
+from typing import TypeVar, Type, List, AsyncGenerator
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from fastapi import HTTPException
+from contextlib import asynccontextmanager
 
 from .abstract_manager import AbstractDatabaseManager
 from ..models.base import SparkBytesModel
@@ -13,7 +13,7 @@ T = TypeVar("T", bound=SparkBytesModel)
 
 class SQLiteManager(AbstractDatabaseManager[T]):
     def __init__(self, session_factory: callable, model: Type[T]):
-        self._session_factory = session_factory
+        self._session_factory = session_factory  # This is get_session
         self.model = model
 
     @property
@@ -24,29 +24,26 @@ class SQLiteManager(AbstractDatabaseManager[T]):
     def model_type(self) -> Type[T]:
         return self.model
 
-    # Changed 'async def' to 'def' since it doesn't need to be asynchronous
-    def session(self) -> AsyncSession:
-        return self._session_factory()
-
     async def create(self, items: List[T]) -> List[T]:
-        async with self.session() as session:
+        async with self._session_factory() as session:
             session.add_all(items)
             await session.commit()
             for item in items:
                 await session.refresh(item)
             return items
 
-    async def put(self, user_id: Any, item: T) -> T:
-        async with self.session() as session:
-            query = select(self.model).where(self.model.user_id == user_id)
-            result = await session.execute(query)
-            db_item = result.scalar_one_or_none()
+    async def put(self, id: str, item: T) -> T:
+        async with self._session_factory() as session:
+            db_item = await session.get(self.model, id)
             if not db_item:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Item with user_id '{user_id}' not found in table '{self.name}'",
+                    detail=ErrorDetail(
+                        message=f"Item '{id}' not found in table '{self.name}'",
+                    ).model_dump()
                 )
-            update_data = item.dict(exclude_unset=True)
+            # Update db_item with data from item
+            update_data = item.model_dump(exclude_unset=True)
             for key, value in update_data.items():
                 setattr(db_item, key, value)
             await session.commit()
@@ -54,7 +51,7 @@ class SQLiteManager(AbstractDatabaseManager[T]):
             return db_item
 
     async def get(self, id: str) -> T:
-        async with self.session() as session:
+        async with self._session_factory() as session:
             db_item = await session.get(self.model, id)
             if not db_item:
                 raise HTTPException(
@@ -66,7 +63,7 @@ class SQLiteManager(AbstractDatabaseManager[T]):
             return db_item
 
     async def list(self, list_request: ListRequest) -> List[T]:
-        async with self.session() as session:
+        async with self._session_factory() as session:
             query = select(self.model)
             if list_request.user_id:
                 query = query.where(self.model.user_id == list_request.user_id)
@@ -108,7 +105,7 @@ class SQLiteManager(AbstractDatabaseManager[T]):
             return list(items)
 
     async def delete(self, id: str) -> T:
-        async with self.session() as session:
+        async with self._session_factory() as session:
             db_item = await session.get(self.model, id)
             if not db_item:
                 raise HTTPException(

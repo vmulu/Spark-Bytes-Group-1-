@@ -119,12 +119,18 @@ const ProfilePage = () => {
         newValue = checked;
       }
 
+      // Handle number inputs
+      if (type === 'number') {
+        newValue = parseFloat(value) || 0; // Default to 0 if parsing fails
+      }
+
       setEditedEvent({
         ...editedEvent,
         [name]: newValue,
       });
     }
   };
+
 
   const handleEventSave = async () => {
     if (!editedEvent) return;
