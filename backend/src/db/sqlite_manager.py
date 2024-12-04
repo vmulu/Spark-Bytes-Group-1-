@@ -45,11 +45,14 @@ class SQLiteManager(AbstractDatabaseManager[T]):
                     message=f"Item '{id}' not found in table '{self.name}'",
                 ).model_dump()
             )
-        item.id = id  # Ensure the item has the correct ID
-        session.add(item)
+        # Update db_item with data from item
+        update_data = item.dict(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_item, key, value)
         await session.commit()
-        await session.refresh(item)
-        return item
+        await session.refresh(db_item)
+        return db_item
+
 
     async def get(self, id: str) -> T:
         session = await self.session()
