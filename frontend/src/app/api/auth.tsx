@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import axiosInstance from './axiosInstance';
 
 // Define the User interface matching the backend User model
@@ -17,12 +17,14 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   updateUser: (user: User | null) => void;
+  logout: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   updateUser: () => {},
+  logout: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -31,6 +33,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateUser = (user: User | null) => {
     setUser(user);
+  };
+
+  const logout = async () => {
+    try {
+      await axiosInstance.get('/logout', { withCredentials: true });
+      setUser(null); // Update the user state to null upon logout
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
   const checkAuth = async () => {
@@ -49,12 +60,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, updateUser, logout }}>
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const logout = async () => {
-  await axiosInstance.get('/logout', { withCredentials: true });
 };
