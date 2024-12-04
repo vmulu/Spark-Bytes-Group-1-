@@ -26,7 +26,7 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        <h1 className="text-5xl font-bold text-center text-blue-600 mb-4">
+        <h1 className="text-5xl font-bold text-center text-[#088F8F] mb-4">
           Welcome to SparkBytes
         </h1>
         <p className="text-lg text-center text-gray-700 mb-8">
@@ -43,13 +43,23 @@ export default function Home() {
           </div>
         ) : (
           <div className="text-center">
+          <div className="flex justify-center gap-4">
+            {/* Find Food on Campus Button */}
             <Link
               href="/map"
               className="inline-block px-10 py-4 bg-blue-600 text-white rounded-lg text-lg hover:bg-blue-700 transition"
             >
               Find Food on Campus
             </Link>
+            {/* Create an Event Button */}
+            <Link
+              href="/profile"
+              className="inline-block px-10 py-4 bg-blue-600 text-white rounded-lg text-lg hover:bg-blue-700 transition"
+            >
+              Create An Event
+            </Link>
           </div>
+        </div>
         )}
         <section className="mt-16">
           <h2 className="text-3xl font-semibold text-blue-600 mb-6">About the Project</h2>
