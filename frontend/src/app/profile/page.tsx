@@ -1,24 +1,43 @@
-'use client';
+"use client";
 
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import withAuth from '../withAuth';
 import { AuthContext } from '../api/auth';
+import { User } from '../api/auth';
 
 interface Preferences {
-  vegan: boolean;
-  halal: boolean;
-  vegetarian: boolean;
-  glutenFree: boolean;
+  is_vegan: boolean;
+  is_halal: boolean;
+  is_vegetarian: boolean;
+  is_gluten_free: boolean;
 }
 
 const ProfilePage = () => {
-  const { user } = useContext(AuthContext);
+  const { user, updateUser } = useContext(AuthContext);
   const [preferences, setPreferences] = useState<Preferences>({
-    vegan: false,
-    halal: false,
-    vegetarian: false,
-    glutenFree: false,
+    is_vegan: false,
+    is_halal: false,
+    is_vegetarian: false,
+    is_gluten_free: false,
   });
+
+  const preferenceLabels: { [key in keyof Preferences]: string } = {
+    is_vegan: 'Vegan',
+    is_halal: 'Halal',
+    is_vegetarian: 'Vegetarian',
+    is_gluten_free: 'Gluten Free',
+  };
+
+  useEffect(() => {
+    if (user) {
+      setPreferences({
+        is_vegan: user.is_vegan,
+        is_halal: user.is_halal,
+        is_vegetarian: user.is_vegetarian,
+        is_gluten_free: user.is_gluten_free,
+      });
+    }
+  }, [user]);
 
   const handlePreferenceToggle = (preference: keyof Preferences) => {
     setPreferences((prevPreferences) => ({
@@ -27,16 +46,51 @@ const ProfilePage = () => {
     }));
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    // TODO: Implement API call to save preferences
-    console.log('Preferences saved:', preferences);
+
+    try {
+      const response = await fetch(
+        `http://localhost:8000/database/users/${user?.user_id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            ...preferences,
+            user_id: user?.user_id,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to save preferences');
+      }
+
+      const data: User = await response.json();
+      console.log('Preferences saved:', data);
+
+      // Update the user in the AuthContext
+      updateUser(data);
+
+      alert('Preferences saved successfully!');
+    } catch (error: any) {
+      console.error('Error saving preferences:', error);
+      alert(`Error saving preferences: ${error.message}`);
+    }
   };
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-lg">
       <h2 className="text-2xl font-bold mb-6">Profile</h2>
-      <p className="mb-4">Hello, {user}!</p>
+      <p className="mb-4">Hello, {user.user_id}!</p>
       <form onSubmit={handleSubmit}>
         <h3 className="text-xl font-semibold mb-4">Food Preferences</h3>
         <div className="grid grid-cols-2 gap-4">
@@ -51,7 +105,7 @@ const ProfilePage = () => {
               }`}
               onClick={() => handlePreferenceToggle(key as keyof Preferences)}
             >
-              {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
+              {preferenceLabels[key as keyof Preferences]}
             </button>
           ))}
         </div>
