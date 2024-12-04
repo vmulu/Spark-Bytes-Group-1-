@@ -16,11 +16,15 @@ const withAuth = (WrappedComponent: React.ComponentType) => {
     }, [user, loading, router]);
 
     if (loading) {
-      return <p>Loading...</p>;
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      );
     }
 
     if (!user) {
-      return null; // Return null or a fallback UI while redirecting
+      return null; // Return null while redirecting
     }
 
     return <WrappedComponent {...props} />;
