@@ -16,18 +16,24 @@ export interface Event {
 }
 
 
-export async function getEvents(): Promise<Event[]> {
+export async function getEvents(userId?: string): Promise<Event[]> {
   try {
+    const requestBody: any = {
+      limit: 100,
+      order: 'desc',
+      order_by: 'created_at',
+    };
+
+    if (userId) {
+      requestBody.user_id = userId;
+    }
+
     const response = await fetch('http://localhost:8000/database/events/list', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        limit: 100,
-        order: 'desc',
-        order_by: 'created_at',
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -41,4 +47,3 @@ export async function getEvents(): Promise<Event[]> {
     return [];
   }
 }
-
