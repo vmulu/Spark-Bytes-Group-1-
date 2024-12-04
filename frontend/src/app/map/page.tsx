@@ -77,9 +77,14 @@ const MapPage = () => {
 
       eventsData.forEach((event) => {
         const matchesPreferences = doesEventMatchPreferences(event, user);
-        const markerIcon = matchesPreferences
+        const markerIconUrl = matchesPreferences
           ? 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
           : 'http://maps.google.com/mapfiles/ms/icons/red-dot.png';
+
+        const markerIcon = {
+          url: markerIconUrl,
+          scaledSize: new google.maps.Size(50, 50), // Scale the icon to be 150% larger (default is ~20x20)
+        };
 
         const marker = new google.maps.Marker({
           position: { lat: event.latitude, lng: event.longitude },
