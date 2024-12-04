@@ -10,6 +10,7 @@ export default function Home() {
 
   return (
     <div>
+       <div className="flex items-center justify-center mt-6">
       {/* Banner */}
       <div className="flex items-center justify-center w-40 h-40 rounded-full shadow-lg overflow-hidden">
         <Image
@@ -21,6 +22,7 @@ export default function Home() {
           priority
         />
       </div>
+    </div>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
