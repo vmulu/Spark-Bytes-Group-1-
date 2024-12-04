@@ -1,16 +1,21 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useContext } from 'react';
 import { useRouter } from 'next/navigation';
-import {logout} from "@/app/api/auth";
+import { AuthContext } from '@/app/api/auth';
 
 const LogoutPage = () => {
   const router = useRouter();
+  const { logout } = useContext(AuthContext);
 
   useEffect(() => {
-    logout();
-    router.push('/');
-  }, [router]);
+    const performLogout = async () => {
+      await logout();
+      router.push('/');
+    };
+
+    performLogout();
+  }, [logout, router]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">
