@@ -136,37 +136,48 @@ const ProfilePage = () => {
     if (!editedEvent) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/database/events/${editedEvent.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify(editedEvent),
-        }
-      );
+      const requestMethod = editedEvent.id ? 'PUT' : 'POST';
+      const endpoint =
+        requestMethod === 'PUT'
+          ? `http://localhost:8000/database/events/${editedEvent.id}`
+          : `http://localhost:8000/database/events`;
+
+      const response = await fetch(endpoint, {
+        method: requestMethod,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(
+          requestMethod === 'POST' ? [editedEvent] : editedEvent // POST expects an array
+        ),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to update event');
+        throw new Error(errorData.detail || 'Failed to save event');
       }
 
-      const updatedEvent: Event = await response.json();
+      const responseData = await response.json();
+      const updatedEvent = requestMethod === 'POST' ? responseData[0] : responseData;
 
-      // Update the event in the list
+      // Update the list of events
       setEvents((prevEvents) =>
-        prevEvents.map((evt) => (evt.id === updatedEvent.id ? updatedEvent : evt))
+        requestMethod === 'POST'
+          ? [...prevEvents, updatedEvent]
+          : prevEvents.map((evt) =>
+            evt.id === updatedEvent.id ? updatedEvent : evt
+          )
       );
 
       setIsModalOpen(false);
-      alert('Event updated successfully!');
+      alert('Event saved successfully!');
     } catch (error: any) {
-      console.error('Error updating event:', error);
-      alert(`Error updating event: ${error.message}`);
+      console.error('Error saving event:', error);
+      alert(`Error saving event: ${error.message}`);
     }
   };
+
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
