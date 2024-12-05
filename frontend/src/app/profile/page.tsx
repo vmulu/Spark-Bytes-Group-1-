@@ -92,12 +92,6 @@ const ProfilePage = () => {
     }
   };
 
-  const handleEventClick = (event: Event) => {
-    setSelectedEvent(event);
-    setEditedEvent({ ...event }); // Clone the event for editing
-    setIsModalOpen(true);
-  };
-
   const handleEventChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -170,12 +164,6 @@ const ProfilePage = () => {
   };
 
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedEvent(null);
-    setEditedEvent(null);
-  };
-
   const handleAddEvent = () => {
     setEditedEvent({
       id: '',
@@ -225,77 +213,6 @@ const ProfilePage = () => {
     } catch (error: any) {
       console.error('Error deleting event:', error);
       alert(`Error deleting event: ${error.message}`);
-    }
-  };
-
-  const handleEventChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    if (!editedEvent) return;
-    const { name, value, type, checked } = e.target;
-    let newValue: any = value;
-
-    if (type === 'checkbox') {
-      newValue = checked;
-    } else if (type === 'number') {
-      newValue = parseFloat(value);
-    }
-
-    setEditedEvent({
-      ...editedEvent,
-      [name]: newValue,
-    });
-  };
-
-  const handleEventSave = async () => {
-    if (!editedEvent) return;
-
-    try {
-      const method = editedEvent.id ? 'PUT' : 'POST';
-      const url = editedEvent.id
-        ? `http://localhost:8000/database/events/${editedEvent.id}`
-        : 'http://localhost:8000/database/events';
-
-      const body = editedEvent.id
-        ? JSON.stringify(editedEvent)
-        : JSON.stringify([editedEvent]); // API expects array for POST
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.detail || 'Failed to save event'
-        );
-      }
-
-      const eventData = await response.json();
-      const updatedEvent = editedEvent.id ? eventData : eventData[0];
-
-      setEvents((prevEvents) => {
-        if (editedEvent.id) {
-          // Update existing event
-          return prevEvents.map((event) =>
-            event.id === updatedEvent.id ? updatedEvent : event
-          );
-        } else {
-          // Add new event
-          return [...prevEvents, updatedEvent];
-        }
-      });
-
-      setIsModalOpen(false);
-      alert('Event saved successfully!');
-    } catch (error: any) {
-      console.error('Error saving event:', error);
-      alert(`Error saving event: ${error.message}`);
     }
   };
 
