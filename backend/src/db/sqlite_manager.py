@@ -1,8 +1,7 @@
-from typing import TypeVar, Type, List, AsyncGenerator
+from typing import TypeVar, Type, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from fastapi import HTTPException
-from contextlib import asynccontextmanager
 
 from .abstract_manager import AbstractDatabaseManager
 from ..models.base import SparkBytesModel
@@ -13,7 +12,7 @@ T = TypeVar("T", bound=SparkBytesModel)
 
 class SQLiteManager(AbstractDatabaseManager[T]):
     def __init__(self, session_factory: callable, model: Type[T]):
-        self._session_factory = session_factory  # This is get_session
+        self._session_factory = session_factory  # Dependency-injected session factory
         self.model = model
 
     @property
@@ -25,6 +24,7 @@ class SQLiteManager(AbstractDatabaseManager[T]):
         return self.model
 
     async def create(self, items: List[T]) -> List[T]:
+        """Create new items in the database."""
         async with self._session_factory() as session:
             session.add_all(items)
             await session.commit()
@@ -32,17 +32,20 @@ class SQLiteManager(AbstractDatabaseManager[T]):
                 await session.refresh(item)
             return items
 
-    async def put(self, id: str, item: T) -> T:
+    async def put(self, user_id: str, item: T) -> T:
+        """Update an existing item by user_id."""
         async with self._session_factory() as session:
-            db_item = await session.get(self.model, id)
+            query = select(self.model).where(self.model.user_id == user_id)
+            result = await session.execute(query)
+            db_item = result.scalar_one_or_none()
             if not db_item:
                 raise HTTPException(
                     status_code=404,
                     detail=ErrorDetail(
-                        message=f"Item '{id}' not found in table '{self.name}'",
+                        message=f"User with user_id '{user_id}' not found in table '{self.name}'",
                     ).model_dump()
                 )
-            # Update db_item with data from item
+            # Update fields selectively from the incoming item
             update_data = item.model_dump(exclude_unset=True)
             for key, value in update_data.items():
                 setattr(db_item, key, value)
@@ -51,6 +54,7 @@ class SQLiteManager(AbstractDatabaseManager[T]):
             return db_item
 
     async def get(self, id: str) -> T:
+        """Retrieve an item by ID."""
         async with self._session_factory() as session:
             db_item = await session.get(self.model, id)
             if not db_item:
@@ -63,6 +67,7 @@ class SQLiteManager(AbstractDatabaseManager[T]):
             return db_item
 
     async def list(self, list_request: ListRequest) -> List[T]:
+        """Retrieve a list of items based on the provided criteria."""
         async with self._session_factory() as session:
             query = select(self.model)
             if list_request.user_id:
@@ -70,10 +75,7 @@ class SQLiteManager(AbstractDatabaseManager[T]):
 
             # Apply ordering
             order_column = getattr(self.model, list_request.order_by)
-            if list_request.order == "asc":
-                query = query.order_by(order_column.asc())
-            else:
-                query = query.order_by(order_column.desc())
+            query = query.order_by(order_column.asc() if list_request.order == "asc" else order_column.desc())
 
             # Apply pagination
             if list_request.after_id:
@@ -105,6 +107,7 @@ class SQLiteManager(AbstractDatabaseManager[T]):
             return list(items)
 
     async def delete(self, id: str) -> T:
+        """Delete an item by ID."""
         async with self._session_factory() as session:
             db_item = await session.get(self.model, id)
             if not db_item:
