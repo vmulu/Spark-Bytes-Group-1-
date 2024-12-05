@@ -25,6 +25,7 @@ class SQLiteManager(AbstractDatabaseManager[T]):
         return self.model
 
     async def create(self, items: List[T]) -> List[T]:
+        """Create new items in the database."""
         async with self._session_factory() as session:
             session.add_all(items)
             await session.commit()
