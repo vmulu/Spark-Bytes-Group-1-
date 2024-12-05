@@ -1,7 +1,6 @@
 import time
 import uuid
 from typing import Annotated
-
 from sqlmodel import SQLModel, Field
 from uuid import UUID
 
@@ -30,3 +29,9 @@ class SparkBytesModel(SQLModel):
         description="The unix timestamp of when this item of data was created, used internally for sorting",
         index=True,
     )]
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        # Validate the id field
+        if not self.id or self.id.strip() == "":
+            self.id = str(uuid.uuid4())

@@ -92,6 +92,90 @@ const ProfilePage = () => {
     }
   };
 
+  const handleEventClick = (event: Event) => {
+    setSelectedEvent(event);
+    setEditedEvent({ ...event }); // Clone the event for editing
+    setIsModalOpen(true);
+  };
+
+  const handleEventChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    if (editedEvent) {
+      const { name, value, type, checked } = e.target;
+      let newValue: any = value;
+
+      // Handle checkboxes
+      if (type === 'checkbox') {
+        newValue = checked;
+      }
+
+      // Handle number inputs
+      if (type === 'number') {
+        newValue = parseFloat(value) || 0; // Default to 0 if parsing fails
+      }
+
+      setEditedEvent({
+        ...editedEvent,
+        [name]: newValue,
+      });
+    }
+  };
+
+
+  const handleEventSave = async () => {
+    if (!editedEvent) return;
+
+    try {
+      const requestMethod = editedEvent.id ? 'PUT' : 'POST';
+      const endpoint =
+        requestMethod === 'PUT'
+          ? `http://localhost:8000/database/events/${editedEvent.id}`
+          : `http://localhost:8000/database/events`;
+
+      const response = await fetch(endpoint, {
+        method: requestMethod,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(
+          requestMethod === 'POST' ? [editedEvent] : editedEvent // POST expects an array
+        ),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to save event');
+      }
+
+      const responseData = await response.json();
+      const updatedEvent = requestMethod === 'POST' ? responseData[0] : responseData;
+
+      // Update the list of events
+      setEvents((prevEvents) =>
+        requestMethod === 'POST'
+          ? [...prevEvents, updatedEvent]
+          : prevEvents.map((evt) =>
+            evt.id === updatedEvent.id ? updatedEvent : evt
+          )
+      );
+
+      setIsModalOpen(false);
+      alert('Event saved successfully!');
+    } catch (error: any) {
+      console.error('Error saving event:', error);
+      alert(`Error saving event: ${error.message}`);
+    }
+  };
+
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedEvent(null);
+    setEditedEvent(null);
+  };
+
   const handleAddEvent = () => {
     setEditedEvent({
       id: '',
