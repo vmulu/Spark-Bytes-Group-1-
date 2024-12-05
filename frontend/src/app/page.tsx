@@ -10,21 +10,23 @@ export default function Home() {
 
   return (
     <div>
+       <div className="flex items-center justify-center mt-6">
       {/* Banner */}
-      <div className="relative">
+      <div className="flex items-center justify-center w-40 h-40 rounded-full shadow-lg overflow-hidden">
         <Image
-          src="/bu_banner.jpg"
+          src="/logo.png"
           alt="BU Campus Banner"
-          width={1920}
-          height={400}
-          className="w-full h-auto"
+          width={200}
+          height={200}
+          className="w-auto h-auto"
           priority
         />
       </div>
+    </div>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        <h1 className="text-5xl font-bold text-center text-blue-600 mb-4">
+        <h1 className="text-5xl font-bold text-center text-[#088F8F] mb-4">
           Welcome to SparkBytes
         </h1>
         <p className="text-lg text-center text-gray-700 mb-8">
@@ -34,23 +36,33 @@ export default function Home() {
           <div className="text-center">
             <Link
               href="/login_student"
-              className="inline-block px-10 py-4 bg-green-600 text-white rounded-lg text-lg hover:bg-green-700 transition"
+              className="inline-block px-10 py-4 bg-[#088F8F] text-white rounded-lg text-lg hover:bg-[#088F8F]  transition"
             >
               Sign In to Get Started
             </Link>
           </div>
         ) : (
           <div className="text-center">
+          <div className="flex justify-center gap-4">
+            {/* Find Food on Campus Button */}
             <Link
               href="/map"
-              className="inline-block px-10 py-4 bg-blue-600 text-white rounded-lg text-lg hover:bg-blue-700 transition"
+              className="inline-block px-10 py-4 bg-[#088F8F] text-white rounded-lg text-lg hover:bg-[#066D6D] transition"
             >
               Find Food on Campus
             </Link>
+            {/* Create an Event Button */}
+            <Link
+              href="/profile"
+              className="inline-block px-10 py-4 bg-[#088F8F] text-white rounded-lg text-lg hover:bg-[#066D6D] transition"
+            >
+              Create An Event
+            </Link>
           </div>
+        </div>
         )}
         <section className="mt-16">
-          <h2 className="text-3xl font-semibold text-blue-600 mb-6">About the Project</h2>
+          <h2 className="text-3xl font-semibold text-bg-[#066D6D] mb-6">About the Project</h2>
           <p className="text-gray-700 leading-relaxed mb-6">
             SparkBytes is dedicated to connecting students with leftover food from campus events,
             reducing food waste, and helping students save money.

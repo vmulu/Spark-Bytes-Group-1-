@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import withAuth from '../withAuth';
-import { AuthContext } from '../api/auth';
-import { User } from '../api/auth';
-import { Event, getEvents } from '../api/events';
+import {AuthContext, User} from '../api/auth';
+import { getEvents, Event } from "@/app/api/events";
+import { FaTrash, FaPlus, FaTimes } from 'react-icons/fa'; // For icons
 
 interface Preferences {
   is_vegan: boolean;
@@ -21,9 +21,7 @@ const ProfilePage = () => {
     is_vegetarian: false,
     is_gluten_free: false,
   });
-
   const [events, setEvents] = useState<Event[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editedEvent, setEditedEvent] = useState<Event | null>(null);
 
@@ -42,8 +40,6 @@ const ProfilePage = () => {
         is_vegetarian: user.is_vegetarian,
         is_gluten_free: user.is_gluten_free,
       });
-
-      // Fetch events created by the user
       fetchUserEvents(user.user_id);
     }
   }, [user]);
@@ -58,27 +54,26 @@ const ProfilePage = () => {
   };
 
   const handlePreferenceToggle = (preference: keyof Preferences) => {
-    setPreferences((prevPreferences) => ({
-      ...prevPreferences,
-      [preference]: !prevPreferences[preference],
+    setPreferences((prev) => ({
+      ...prev,
+      [preference]: !prev[preference],
     }));
   };
 
   const handleSubmitPreferences = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!user) return;
 
     try {
       const response = await fetch(
-        `http://localhost:8000/database/users/${user?.user_id}`,
+        `http://localhost:8000/database/users/${user.user_id}`,
         {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
             ...preferences,
-            user_id: user?.user_id,
+            user_id: user.user_id,
           }),
         }
       );
@@ -88,23 +83,13 @@ const ProfilePage = () => {
         throw new Error(errorData.detail || 'Failed to save preferences');
       }
 
-      const data: User = await response.json();
-      console.log('Preferences saved:', data);
-
-      // Update the user in the AuthContext
-      updateUser(data);
-
+      const updatedUser: User = await response.json();
+      updateUser(updatedUser);
       alert('Preferences saved successfully!');
     } catch (error: any) {
       console.error('Error saving preferences:', error);
       alert(`Error saving preferences: ${error.message}`);
     }
-  };
-
-  const handleEventClick = (event: Event) => {
-    setSelectedEvent(event);
-    setEditedEvent({ ...event }); // Clone the event for editing
-    setIsModalOpen(true);
   };
 
   const handleEventChange = (
@@ -179,12 +164,6 @@ const ProfilePage = () => {
   };
 
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedEvent(null);
-    setEditedEvent(null);
-  };
-
   const handleAddEvent = () => {
     setEditedEvent({
       id: '',
@@ -205,35 +184,41 @@ const ProfilePage = () => {
     setIsModalOpen(true);
   };
 
-  const handleEventCreate = async () => {
-    if (!editedEvent) return;
+  const handleEditEvent = (event: Event) => {
+    setEditedEvent({ ...event });
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!confirm('Are you sure you want to delete this event?')) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/database/events`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify([editedEvent]), // API expects an array of events
-      });
+      const response = await fetch(
+        `http://localhost:8000/database/events/${eventId}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to create event');
+        throw new Error(errorData.detail || 'Failed to delete event');
       }
 
-      const newEvents: Event[] = await response.json();
-
-      // Add the new event to the list
-      setEvents((prevEvents) => [...prevEvents, ...newEvents]);
-
-      setIsModalOpen(false);
-      alert('Event created successfully!');
+      setEvents((prevEvents) =>
+        prevEvents.filter((event) => event.id !== eventId)
+      );
+      alert('Event deleted successfully!');
     } catch (error: any) {
-      console.error('Error creating event:', error);
-      alert(`Error creating event: ${error.message}`);
+      console.error('Error deleting event:', error);
+      alert(`Error deleting event: ${error.message}`);
     }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditedEvent(null);
   };
 
   if (!user) {
@@ -266,7 +251,7 @@ const ProfilePage = () => {
         </div>
         <button
           type="submit"
-          className="mt-6 w-full px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+          className="mt-6 mb-8 w-full px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
         >
           Save Preferences
         </button>
@@ -277,9 +262,9 @@ const ProfilePage = () => {
         <h3 className="text-xl font-semibold mb-4">My Events</h3>
         <button
           onClick={handleAddEvent}
-          className="mb-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+          className="mb-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition flex items-center"
         >
-          Add New Event
+          <FaPlus className="mr-2" /> Add New Event
         </button>
         {events.length === 0 ? (
           <p>No events created yet.</p>
@@ -288,18 +273,35 @@ const ProfilePage = () => {
             {events.map((event) => (
               <li
                 key={event.id}
-                className="p-4 border border-gray-200 rounded-md shadow-sm transition-transform duration-200 ease-in-out hover:scale-105 cursor-pointer"
-                onClick={() => handleEventClick(event)}
+                className="p-4 border border-gray-200 rounded-md shadow-sm"
               >
-                <h4 className="text-lg font-semibold">{event.name}</h4>
-                <p className="text-gray-600">{event.description}</p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Location: {event.location}
-                </p>
-                <p className="text-sm text-gray-500">
-                  Time: {new Date(event.start_time).toLocaleString()} -{' '}
-                  {new Date(event.end_time).toLocaleString()}
-                </p>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="text-lg font-semibold">{event.name}</h4>
+                    <p className="text-gray-600">{event.description}</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Location: {event.location}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Time: {new Date(event.start_time).toLocaleString()} -{' '}
+                      {new Date(event.end_time).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEditEvent(event)}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteEvent(event.id)}
+                      className="text-red-600 hover:text-red-800 flex items-center"
+                    >
+                      <FaTrash className="mr-1" /> Delete
+                    </button>
+                  </div>
+                </div>
               </li>
             ))}
           </ul>
@@ -320,7 +322,7 @@ const ProfilePage = () => {
               onClick={handleCloseModal}
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl"
             >
-              &times;
+              <FaTimes />
             </button>
             <h3 className="text-2xl font-bold mb-4">
               {editedEvent.id ? 'Edit Event' : 'Create Event'}
@@ -416,13 +418,13 @@ const ProfilePage = () => {
                   className="w-full p-2 border rounded-md"
                 />
               </div>
-              {/* Dietary Preferences */}
+              {/* Dietary Options */}
               <div className="mb-4">
                 <h4 className="text-lg font-semibold mb-2">
                   Dietary Options
                 </h4>
-                <div className="flex items-center">
-                  <label className="mr-4 flex items-center">
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center">
                     <input
                       type="checkbox"
                       name="is_vegan"
@@ -432,7 +434,7 @@ const ProfilePage = () => {
                     />
                     Vegan
                   </label>
-                  <label className="mr-4 flex items-center">
+                  <label className="flex items-center">
                     <input
                       type="checkbox"
                       name="is_vegetarian"
@@ -442,7 +444,7 @@ const ProfilePage = () => {
                     />
                     Vegetarian
                   </label>
-                  <label className="mr-4 flex items-center">
+                  <label className="flex items-center">
                     <input
                       type="checkbox"
                       name="is_halal"
@@ -452,7 +454,7 @@ const ProfilePage = () => {
                     />
                     Halal
                   </label>
-                  <label className="mr-4 flex items-center">
+                  <label className="flex items-center">
                     <input
                       type="checkbox"
                       name="is_gluten_free"
@@ -466,7 +468,7 @@ const ProfilePage = () => {
               </div>
             </form>
             <button
-              onClick={editedEvent.id ? handleEventSave : handleEventCreate}
+              onClick={handleEventSave}
               className="mt-4 w-full px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
             >
               {editedEvent.id ? 'Save Changes' : 'Create Event'}
