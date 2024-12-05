@@ -46,9 +46,10 @@ app = FastAPI(lifespan=lifespan)
 
 # Add routers
 generator = DatabaseEndpointGenerator()
-generator.register_table(SQLiteManager(get_session, model=User))
-generator.register_table(SQLiteManager(get_session, model=Event))
+generator.register_table(SQLiteManager(get_session, model=User, primary_key="user_id"))
+generator.register_table(SQLiteManager(get_session, model=Event))  # Default primary_key="id"
 app.include_router(generator.router)
+
 
 
 ALGORITHM = 'HS256'

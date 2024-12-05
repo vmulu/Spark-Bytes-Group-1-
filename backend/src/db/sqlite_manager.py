@@ -11,9 +11,10 @@ from ..models.error_models import ErrorDetail
 T = TypeVar("T", bound=SparkBytesModel)
 
 class SQLiteManager(AbstractDatabaseManager[T]):
-    def __init__(self, session_factory: callable, model: Type[T]):
+    def __init__(self, session_factory: callable, model: Type[T], primary_key: str = "id"):
         self._session_factory = session_factory  # Dependency-injected session factory
         self.model = model
+        self.primary_key = primary_key  # Specify the primary key field
 
     @property
     def name(self) -> str:
@@ -32,17 +33,17 @@ class SQLiteManager(AbstractDatabaseManager[T]):
                 await session.refresh(item)
             return items
 
-    async def put(self, user_id: str, item: T) -> T:
-        """Update an existing item by user_id."""
+    async def put(self, identifier: str, item: T) -> T:
+        """Update an existing item by identifier."""
         async with self._session_factory() as session:
-            query = select(self.model).where(self.model.user_id == user_id)
+            query = select(self.model).where(getattr(self.model, self.primary_key) == identifier)
             result = await session.execute(query)
             db_item = result.scalar_one_or_none()
             if not db_item:
                 raise HTTPException(
                     status_code=404,
                     detail=ErrorDetail(
-                        message=f"User with user_id '{user_id}' not found in table '{self.name}'",
+                        message=f"Item with {self.primary_key} '{identifier}' not found in table '{self.name}'",
                     ).model_dump()
                 )
             # Update fields selectively from the incoming item
@@ -53,15 +54,17 @@ class SQLiteManager(AbstractDatabaseManager[T]):
             await session.refresh(db_item)
             return db_item
 
-    async def get(self, id: str) -> T:
-        """Retrieve an item by ID."""
+    async def get(self, identifier: str) -> T:
+        """Retrieve an item by identifier."""
         async with self._session_factory() as session:
-            db_item = await session.get(self.model, id)
+            query = select(self.model).where(getattr(self.model, self.primary_key) == identifier)
+            result = await session.execute(query)
+            db_item = result.scalar_one_or_none()
             if not db_item:
                 raise HTTPException(
                     status_code=404,
                     detail=ErrorDetail(
-                        message=f"Item '{id}' not found in table '{self.name}'",
+                        message=f"Item with {self.primary_key} '{identifier}' not found in table '{self.name}'",
                     ).model_dump()
                 )
             return db_item
@@ -106,15 +109,17 @@ class SQLiteManager(AbstractDatabaseManager[T]):
             items = result.scalars().all()
             return list(items)
 
-    async def delete(self, id: str) -> T:
-        """Delete an item by ID."""
+    async def delete(self, identifier: str) -> T:
+        """Delete an item by identifier."""
         async with self._session_factory() as session:
-            db_item = await session.get(self.model, id)
+            query = select(self.model).where(getattr(self.model, self.primary_key) == identifier)
+            result = await session.execute(query)
+            db_item = result.scalar_one_or_none()
             if not db_item:
                 raise HTTPException(
                     status_code=404,
                     detail=ErrorDetail(
-                        message=f"Item '{id}' not found in table '{self.name}'",
+                        message=f"Item with {self.primary_key} '{identifier}' not found in table '{self.name}'",
                     ).model_dump()
                 )
             await session.delete(db_item)
